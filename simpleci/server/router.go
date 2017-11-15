@@ -11,9 +11,7 @@ import (
 func setRoutes(r *gin.Engine, conf *config.Config) {
 	ciService := NewCIService(conf)
 	r.GET("/ping", ciService.ping)
-	r.GET("/authorize", ciService.authorizeHanlder)
-	r.GET("/callback", ciService.callbackHanlder)
-	r.GET("/callback/codegot", ciService.codeGotHandler)
-	r.GET("/callback/accessgot", ciService.accessTokenGotHandler)
+	r.GET("/authurl", ciService.authurlHanlder)
+	r.GET("/callback/github/codegot", ciService.codeGotHandler)
 	r.GET("/repos/:owner/:repo/hooks", ciService.createHookHandler)
 }

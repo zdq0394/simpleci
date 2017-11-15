@@ -19,11 +19,13 @@ func Start(configPath string) {
 		fmt.Println(err)
 		return
 	}
+	fmt.Println(conf.ListenAddr)
+	fmt.Println(conf.Github.AuthRedirectURL)
 	r := gin.Default()
 	// set routes
 	setRoutes(r, &conf)
 	// start
-	startAt(r, defaultListenAddr)
+	startAt(r, conf.ListenAddr)
 }
 
 func startAt(r *gin.Engine, addrs ...string) {

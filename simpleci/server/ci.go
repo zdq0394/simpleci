@@ -13,6 +13,12 @@ import (
 	"github.com/zdq0394/simpleci/simpleci/githubclient"
 )
 
+const (
+	GithubAuthorizeURL   = "https://github.com/login/oauth/authorize"
+	GithubAccessTokenURL = "https://github.com/login/oauth/access_token"
+	AuthScope            = "repo,user:email,admin:repo_hook"
+)
+
 type CIService struct {
 	Conf *config.Config
 }
@@ -27,23 +33,11 @@ func (s *CIService) ping(c *gin.Context) {
 	c.String(http.StatusOK, "%s", "pong")
 }
 
-func (s *CIService) authorizeHanlder(c *gin.Context) {
-	githubURL := "https://github.com/login/oauth/authorize"
-	redirectURL := "http://localhost:8080/callback/codegot"
-	scope := "repo,user:email,admin:repo_hook"
-	authorizeURL := fmt.Sprintf("%s?redirect_uri=%s&client_id=%s&scope=%s", githubURL, redirectURL, s.Conf.Github.ClientID, scope)
-	respText := fmt.Sprintf("<html><head><title>auth</title></head><body><a href=\"%s\">Click here</a> to begin!</a></body></html>", authorizeURL)
-	c.Writer.WriteString(respText)
-}
-
-func (s *CIService) callbackHanlder(c *gin.Context) {
-	fmt.Println("callbackHandler....")
-	code := c.Query("code")
-	fmt.Println(code)
-	s.httpPost(code)
-	c.JSON(200, gin.H{
-		"Code": code,
-	})
+func (s *CIService) authurlHanlder(c *gin.Context) {
+	authorizeURL := fmt.Sprintf("%s?redirect_uri=%s&client_id=%s&scope=%s",
+		GithubAuthorizeURL, s.Conf.Github.AuthRedirectURL, s.Conf.Github.ClientID, AuthScope)
+	//respText := fmt.Sprintf("<html><head><title>auth</title></head><body><a href=\"%s\">Click here</a> to begin!</a></body></html>", authorizeURL)
+	c.String(http.StatusOK, authorizeURL)
 }
 
 func (s *CIService) codeGotHandler(c *gin.Context) {
@@ -51,17 +45,11 @@ func (s *CIService) codeGotHandler(c *gin.Context) {
 	code := c.Query("code")
 	fmt.Println(code)
 	s.httpPost(code)
-	c.JSON(200, gin.H{
-		"Code": code,
-	})
 }
 
-func (s *CIService) accessTokenGotHandler(c *gin.Context) {
-	fmt.Println("accessTokenGotHandler....")
-}
 func (s *CIService) httpPost(code string) {
 	params := fmt.Sprintf("client_id=%s&client_secret=%s&code=%s", s.Conf.Github.ClientID, s.Conf.Github.ClientSecret, code)
-	resp, err := http.Post("https://github.com/login/oauth/access_token",
+	resp, err := http.Post(GithubAccessTokenURL,
 		"application/x-www-form-urlencoded",
 		strings.NewReader(params))
 	if err != nil {
@@ -79,6 +67,7 @@ func (s *CIService) httpPost(code string) {
 	AccessToken = strings.Split(accessTokenStr, "=")[1]
 	fmt.Println(AccessToken)
 }
+
 func (s *CIService) getAccessTokenOfUser(user string) string {
 	return AccessToken
 }
@@ -93,7 +82,7 @@ func (s *CIService) createHookHandler(c *gin.Context) {
 	// json.NewDecoder(c.Request.Body).Decode(v)
 	var v github.Hook
 	v.Events = []string{"push"}
-	jenkinsURL := "http://123.59.204.155:8080/github-webhook/"
+	jenkinsURL := fmt.Sprintf("%s/github-webhook/", s.Conf.Jenkins.Server)
 	v.URL = &jenkinsURL
 	name := "web"
 	v.Name = &name
