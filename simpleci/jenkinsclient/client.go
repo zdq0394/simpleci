@@ -3,7 +3,7 @@ package jenkinsclient
 import (
 	"fmt"
 
-	"github.com/zdq0394/simpleci/simpleci/jenkinsclient/gojenkins"
+	gojenkins "github.com/zdq0394/z/jenkins"
 )
 
 type JenkinsClient struct {

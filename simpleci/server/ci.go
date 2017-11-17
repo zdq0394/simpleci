@@ -34,8 +34,9 @@ func (s *CIService) ping(c *gin.Context) {
 }
 
 func (s *CIService) authurlHanlder(c *gin.Context) {
-	authorizeURL := fmt.Sprintf("%s?redirect_uri=%s&client_id=%s&scope=%s",
-		GithubAuthorizeURL, s.Conf.Github.AuthRedirectURL, s.Conf.Github.ClientID, AuthScope)
+	userID := "zdq0394"
+	authorizeURL := fmt.Sprintf("%s?redirect_uri=%s&client_id=%s&scope=%s&state=%s",
+		GithubAuthorizeURL, s.Conf.Github.AuthRedirectURL, s.Conf.Github.ClientID, AuthScope, userID)
 	//respText := fmt.Sprintf("<html><head><title>auth</title></head><body><a href=\"%s\">Click here</a> to begin!</a></body></html>", authorizeURL)
 	c.String(http.StatusOK, authorizeURL)
 }
@@ -43,12 +44,13 @@ func (s *CIService) authurlHanlder(c *gin.Context) {
 func (s *CIService) codeGotHandler(c *gin.Context) {
 	fmt.Println("codeGotHandler....")
 	code := c.Query("code")
-	fmt.Println(code)
-	s.httpPost(code)
+	state := c.Query("state")
+	fmt.Println("State:", state, " Code:", code)
+	s.httpPost(state, code)
 }
 
-func (s *CIService) httpPost(code string) {
-	params := fmt.Sprintf("client_id=%s&client_secret=%s&code=%s", s.Conf.Github.ClientID, s.Conf.Github.ClientSecret, code)
+func (s *CIService) httpPost(state, code string) {
+	params := fmt.Sprintf("client_id=%s&client_secret=%s&code=%s&state=%s", s.Conf.Github.ClientID, s.Conf.Github.ClientSecret, code, state)
 	resp, err := http.Post(GithubAccessTokenURL,
 		"application/x-www-form-urlencoded",
 		strings.NewReader(params))
